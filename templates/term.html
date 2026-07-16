@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ term.title }}（{{ term.title_cn }}）- AI 词典{% endblock %}
+
+{% block content %}
+<!-- 面包屑导航 -->
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">首页</a>
+    <span>&gt;</span>
+    <a href="{{ url_for('index', cat=term.category) }}">{{ term.category }}</a>
+    <span>&gt;</span>
+    {{ term.title }}
+</div>
+
+<!-- 词条详情 -->
+<div class="term-detail">
+    <div class="term-detail-header">
+        <h1>{{ term.title }}<span class="title-cn">{{ term.title_cn }}</span></h1>
+    </div>
+    <div class="term-detail-meta">
+        <span class="category-tag">{{ term.category }}</span>
+        <span>更新于 {{ term.updated_at }}</span>
+    </div>
+
+    <!-- 顶部编辑入口 -->
+    <div class="term-top-actions">
+        <a href="{{ url_for('term_edit', id=term.id) }}" class="btn-edit-top">&#9998; 编辑此词条</a>
+    </div>
+
+    <div class="md-content">
+        {{ content_html | safe }}
+    </div>
+</div>
+
+<!-- 相关词 -->
+{% if related_terms %}
+<div class="related-terms">
+    <h3>相关概念</h3>
+    <div class="related-list">
+        {% for rt in related_terms %}
+        <a href="{{ url_for('term_detail', id=rt.id) }}">{{ rt.title }}（{{ rt.title_cn }}）</a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- 浮动操作按钮 -->
+<div class="floating-actions">
+    <a href="{{ url_for('term_edit', id=term.id) }}" class="btn-edit" title="编辑">&#9998;</a>
+    <a href="{{ url_for('random_term') }}" class="btn-random" title="随机词条">&#x1f3b2;</a>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI 词典{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="{{ url_for('index') }}">AI 词典</a>
+        </div>
+        <div class="nav-actions">
+            <a href="{{ url_for('term_new') }}" class="btn-nav-add">+ 添加词条</a>
+            <a href="{{ url_for('random_term') }}">随机词条</a>
+        </div>
+    </nav>
+
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+        <form action="{{ url_for('index') }}" method="get">
+            <input type="text" name="q" value="{{ q if q is defined else '' }}" placeholder="搜索 AI 术语（支持中英文）...">
+            <button type="submit">搜索</button>
+        </form>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- 底部 -->
+    <footer class="footer">
+        AI 词典 - 共收录 {{ total }} 个词条
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

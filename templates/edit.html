@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_new %}添加新词条{% else %}编辑：{{ term.title }}{% endif %} - AI 词典{% endblock %}
+
+{% block content %}
+<div class="edit-header">
+    <h1>{% if is_new %}添加新词条{% else %}编辑词条{% endif %}</h1>
+</div>
+
+{% if error %}
+<div class="error-message">{{ error }}</div>
+{% endif %}
+
+<div class="edit-container">
+    <div class="edit-form-panel">
+        <div class="edit-card">
+            <form method="post" action="{% if is_new %}{{ url_for('term_new') }}{% else %}{{ url_for('term_edit', id=term.id) }}{% endif %}">
+                <div class="form-group">
+                    <label for="title">英文术语 *</label>
+                    <input type="text" id="title" name="title" value="{{ term.title if term else '' }}" placeholder="如：Transformer" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="title_cn">中文译名</label>
+                    <input type="text" id="title_cn" name="title_cn" value="{{ term.title_cn if term else '' }}" placeholder="如：变换器">
+                </div>
+
+                <div class="form-group">
+                    <label for="category">分类 *</label>
+                    <input type="text" id="category" name="category" value="{{ term.category if term else '' }}" placeholder="如：模型架构 / 训练技术 / 基础概念 / 应用领域" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="related">相关概念（词条 ID，逗号分隔）</label>
+                    <input type="text" id="related" name="related" value="{{ term.related if term else '' }}" placeholder="如：1,3,15">
+                    <small class="form-hint">填写相关词条的数据库 ID，用英文逗号分隔</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="content">词条内容（Markdown 格式）</label>
+                    <textarea id="content" name="content" placeholder="## 概述
+...">{{ term.content if term else '' }}</textarea>
+                </div>
+
+                <div class="edit-actions">
+                    <button type="submit" class="btn-primary">保存</button>
+                    <a href="{% if term %}{{ url_for('term_detail', id=term.id) }}{% else %}{{ url_for('index') }}{% endif %}" class="btn-secondary">取消</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="edit-preview-panel">
+        <div class="preview-title">实时预览</div>
+        <div id="preview-content" class="md-content">
+            <!-- 预览内容由 JS 动态渲染 -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 实时 Markdown 预览
+const contentInput = document.getElementById('content');
+const previewDiv = document.getElementById('preview-content');
+
+function updatePreview() {
+    const text = contentInput.value;
+    // 简单的 Markdown 转 HTML（粗体、斜体、代码块、标题、列表）
+    let html = text
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/^- (.*$)/gim, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+        .replace(/\n/g, '<br>');
+    previewDiv.innerHTML = html;
+}
+
+contentInput.addEventListener('input', updatePreview);
+updatePreview(); // 初始渲染
+</script>
+{% endblock %}

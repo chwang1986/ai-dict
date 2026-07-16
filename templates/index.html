@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}AI 词典{% if q %} - 搜索: {{ q }}{% endif %}{% endblock %}
+
+{% block content %}
+{% if q %}
+    <div class="search-info">
+        搜索 "<strong>{{ q }}</strong>" 共找到 <strong>{{ active_letters | map('attribute', 'length') | sum }}</strong> 个词条
+    </div>
+{% endif %}
+
+<!-- 分类筛选标签 -->
+{% if categories %}
+<div class="category-filter">
+    <span class="filter-label">分类筛选：</span>
+    <a href="{{ url_for('index') }}" class="filter-tag{% if not current_cat %} active{% endif %}">全部</a>
+    {% for cat in categories %}
+    <a href="{{ url_for('index', cat=cat) }}" class="filter-tag{% if current_cat == cat %} active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- 字母索引导航 -->
+{% if active_letters %}
+<div class="alphabet-nav">
+    {% for letter in active_letters %}
+    <a href="#letter-{{ letter }}" class="alphabet-link">{{ letter }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not active_letters %}
+    <div class="empty-state">
+        没有找到匹配的词条。
+    </div>
+{% else %}
+    {% for letter in active_letters %}
+    {% set terms = letter_groups[letter] %}
+    {% if terms %}
+    <div class="letter-section" id="letter-{{ letter }}">
+        <div class="letter-header">{{ letter }}</div>
+        <div class="letter-terms">
+            {% for term in terms %}
+            <div class="term-item">
+                <div class="term-main">
+                    <a href="{{ url_for('term_detail', id=term.id) }}" class="term-title">
+                        {% if highlight %}
+                            {{ highlight(term.title, q)|safe }}
+                        {% else %}
+                            {{ term.title }}
+                        {% endif %}
+                    </a>
+                    <span class="term-title-cn">
+                        {% if highlight %}
+                            {{ highlight(term.title_cn, q)|safe }}
+                        {% else %}
+                            {{ term.title_cn }}
+                        {% endif %}
+                    </span>
+                    <span class="term-category-tag">{{ term.category }}</span>
+                </div>
+                <div class="term-summary">
+                    {% set summary = term.content | replace('#', '') | replace('*', '') | replace('\n', ' ') | truncate(100) %}
+                    {% if highlight %}
+                        {{ highlight(summary, q)|safe }}
+                    {% else %}
+                        {{ summary }}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+{% endif %}
+{% endblock %}
