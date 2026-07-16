@@ -18,6 +18,49 @@ app = Flask(__name__)
 app.config['DATABASE'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dict.db')
 
 
+# ===== 数据库自动初始化 =====
+def init_db():
+    """检查数据库表是否存在，不存在则创建表并填充种子数据。"""
+    db_path = app.config['DATABASE']
+    conn = sqlite3.connect(db_path)
+    # 检查 terms 表是否存在
+    table_exists = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='terms'"
+    ).fetchone() is not None
+
+    if not table_exists:
+        from seed import TERMS
+        conn.execute('''
+            CREATE TABLE terms (
+                id INTEGER PRIMARY KEY,
+                title TEXT NOT NULL,
+                title_cn TEXT NOT NULL DEFAULT '',
+                category TEXT NOT NULL,
+                content TEXT NOT NULL DEFAULT '',
+                related TEXT DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        ''')
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        for term in TERMS:
+            conn.execute(
+                'INSERT INTO terms (id, title, title_cn, category, content, related, created_at, updated_at) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                (term[0], term[1], term[2], term[3], term[4], term[5], now, now)
+            )
+        conn.commit()
+        print(f'[init_db] 数据库初始化完成，共插入 {len(TERMS)} 个词条。')
+    else:
+        print('[init_db] 数据库已存在，跳过初始化。')
+    conn.close()
+
+
+# 应用启动时自动初始化数据库
+with app.app_context():
+    init_db()
+
+
 # ===== 数据库工具函数 =====
 def get_db():
     """获取数据库连接，复用同一请求中的连接。"""
