@@ -3,15 +3,17 @@ AI 词典 - Flask 主应用
 提供 AI 术语的浏览、搜索、编辑和新增功能。
 """
 
+import base64
 import os
 import re
 import random
 import sqlite3
 import string
 from datetime import datetime
+from functools import wraps
 
 import markdown
-from flask import Flask, request, render_template, redirect, url_for, g
+from flask import Flask, request, render_template, redirect, url_for, g, Response
 
 # ===== 应用配置 =====
 app = Flask(__name__)
@@ -108,6 +110,32 @@ def get_all_categories():
     db = get_db()
     rows = db.execute('SELECT DISTINCT category FROM terms ORDER BY category').fetchall()
     return [row['category'] for row in rows]
+
+
+# ===== 认证保护 =====
+AUTH_USER = os.environ.get('AI_DICT_USER', 'admin')
+AUTH_PASS = os.environ.get('AI_DICT_PASS', 'a1dmin@dict')
+
+
+def basic_auth_required(f):
+    """HTTP Basic Auth 装饰器：保护新增/编辑路由。"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.headers.get('Authorization', '')
+        if auth.startswith('Basic '):
+            try:
+                creds = base64.b64decode(auth[6:]).decode('utf-8')
+                user, pwd = creds.split(':', 1)
+                if user == AUTH_USER and pwd == AUTH_PASS:
+                    return f(*args, **kwargs)
+            except Exception:
+                pass
+        return Response(
+            '需要认证后才能访问此页面',
+            401,
+            {'WWW-Authenticate': 'Basic realm="AI Dict"'}
+        )
+    return decorated
 
 
 # ===== 路由 =====
@@ -215,6 +243,7 @@ def term_detail(id):
 
 
 @app.route('/term/<int:id>/edit', methods=['GET', 'POST'])
+@basic_auth_required
 def term_edit(id):
     """编辑页：GET 展示表单，POST 保存修改。"""
     db = get_db()
@@ -251,6 +280,7 @@ def term_edit(id):
 
 
 @app.route('/term/new', methods=['GET', 'POST'])
+@basic_auth_required
 def term_new():
     """新增词条页：GET 展示空表单，POST 创建新词条。"""
     db = get_db()
